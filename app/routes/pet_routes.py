@@ -9,21 +9,13 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 bp = Blueprint("pets", __name__, url_prefix="/pets")
 
 
-def generate_name():
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    input_message = f"I have a pet model and can you generate a name."
-    response = model.generate_content(input_message)
-    return response
-
 @bp.post("")
 def create_pet():
     request_body = request.get_json()
-    name['name'] = generate_name(request_body)
-    print(name)
+    request_body["name"] = generate_name(request_body)
     
     try:
         new_pet = Pet.from_dict(request_body)
-
         db.session.add(new_pet)
         db.session.commit()
 
@@ -53,6 +45,14 @@ def get_pets():
 def get_single_pet(pet_id):
     pet = validate_model(Pet,pet_id)
     return pet.to_dict()
+
+
+def generate_name(request):
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    input_message = f"I have a {request["animal"]} who is {request["coloration"]} and {request["personality"]}. Pleas give me a name for them? Just the name, nothing else."
+    response = model.generate_content(input_message)
+    return response.text.strip()
+    
 
 def validate_model(cls,id):
     try:
